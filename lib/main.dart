@@ -1,12 +1,18 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:quizzler/quizbrain.dart';
+import 'package:rflutter_alert/rflutter_alert.dart';
 
 void main() => runApp(QuizApp());
+
+QuizBrain quizBrain = QuizBrain();
 
 class QuizApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
         backgroundColor: Colors.grey.shade900,
         body: SafeArea(
@@ -27,16 +33,66 @@ class QuizHomePage extends StatefulWidget {
 }
 
 class _QuizHomePageState extends State<QuizHomePage> {
-  List<Icon> scoreKeeper = [
-    Icon(
-      Icons.check,
-      color: Colors.green,
-    ),
-    Icon(
-      Icons.check,
-      color: Colors.red,
-    ),
-  ];
+  List<Icon> scoreKeeper = [];
+
+  void resetApp() {
+    setState(() {
+      quizBrain.reset();
+      scoreKeeper = [];
+      print(scoreKeeper);
+    });
+  }
+
+  void generateBadge() {}
+
+  void checkAnswer(bool userPickedAnswer) {
+    if (quizBrain.isFinished()) {
+      Alert(
+        context: context,
+        title: 'Finished!',
+        desc: 'Quiz is completed.',
+        style: AlertStyle(
+//          animationType: AnimationType.fromTop,
+          isCloseButton: true,
+          isOverlayTapDismiss: false,
+        ),
+        closeFunction: () {
+          resetApp();
+        },
+        buttons: [
+          DialogButton(
+            child: Text('Cancel'),
+            onPressed: () {
+              resetApp();
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      ).show();
+    } else {
+      bool correctAnswer = quizBrain.getQuestionAnswer();
+      setState(() {
+        if (correctAnswer == userPickedAnswer) {
+          scoreKeeper.add(
+            Icon(
+              Icons.check,
+              color: Colors.green,
+            ),
+          );
+        } else {
+          scoreKeeper.add(
+            Icon(
+              Icons.close,
+              color: Colors.red,
+            ),
+          );
+        }
+
+        quizBrain.nextQuestion();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -49,7 +105,7 @@ class _QuizHomePageState extends State<QuizHomePage> {
             padding: EdgeInsets.all(10.0),
             child: Center(
               child: Text(
-                'This is where the question text will go',
+                quizBrain.getQuestionText(),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white,
@@ -62,17 +118,9 @@ class _QuizHomePageState extends State<QuizHomePage> {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.all(15.0),
-            child: FlatButton(
+            child: RaisedButton(
               onPressed: () {
-                print('True button pressed');
-                setState(() {
-                  scoreKeeper.add(
-                    Icon(
-                      Icons.check,
-                      color: Colors.green,
-                    ),
-                  );
-                });
+                checkAnswer(true);
               },
               textColor: Colors.white,
               color: Colors.green,
@@ -88,17 +136,9 @@ class _QuizHomePageState extends State<QuizHomePage> {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.all(15.0),
-            child: FlatButton(
+            child: RaisedButton(
               onPressed: () {
-                print('False button pressed');
-                setState(() {
-                  scoreKeeper.add(
-                    Icon(
-                      Icons.close,
-                      color: Colors.red,
-                    ),
-                  );
-                });
+                checkAnswer(false);
               },
               textColor: Colors.white,
               color: Colors.red,
